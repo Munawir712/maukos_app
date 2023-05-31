@@ -1,16 +1,23 @@
+import 'dart:developer';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maukos_app/app/data/models/auth/login_model.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
 import 'package:maukos_app/pesentation/auth/components/custom_textfield_widget.dart';
+import 'package:maukos_app/pesentation/auth/cubit/auth_cubit.dart';
 import 'package:maukos_app/routes/app_router.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({Key? key}) : super(key: key);
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController emailController =
+      TextEditingController(text: 'admin@gmail.com');
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController passController = TextEditingController();
+  final TextEditingController passController =
+      TextEditingController(text: 'password');
 
   @override
   Widget build(BuildContext context) {
@@ -209,22 +216,53 @@ class LoginPage extends StatelessWidget {
               controller: passController,
               obscureText: true,
             ),
-            Container(
-              margin: const EdgeInsets.only(top: 18, bottom: 12),
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
+            BlocConsumer<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is AuthLoaded) {
                   AutoRouter.of(context).replace(const MainRoute());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  padding: const EdgeInsets.all(16),
-                ),
-                child: Text(
-                  "Login",
-                  style: textStyle.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
+                }
+                if (state is AuthError) {
+                  log("ADA ERROR BRO =>  ${state.message}");
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text("Login Failed")));
+                }
+              },
+              builder: (context, state) {
+                if (state is AuthLoading) {
+                  return Container(
+                    margin: const EdgeInsets.only(top: 18, bottom: 12),
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.all(16),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                  );
+                }
+                return Container(
+                  margin: const EdgeInsets.only(top: 18, bottom: 12),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      context.read<AuthCubit>().login(LoginModel(
+                          emailController.text, passController.text));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    child: Text(
+                      "Login",
+                      style: textStyle.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                );
+              },
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -239,7 +277,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: () {
-                    AutoRouter.of(context).push(RegisterRoute());
+                    AutoRouter.of(context).replace(RegisterRoute());
                   },
                   child: Text(
                     "Daftar",

@@ -38,7 +38,7 @@ class KosEntity extends Equatable {
       ];
 }
 
-List<KosEntity> listKos = [
+List<KosEntity> listKos = const [
   KosEntity(
     kosId: 1,
     numberKos: '001',

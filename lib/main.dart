@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maukos_app/injection.dart';
+import 'package:maukos_app/pesentation/auth/cubit/auth_cubit.dart';
 import 'package:maukos_app/routes/app_router.dart';
 
 void main() {
@@ -12,12 +14,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Mau Kos',
-      debugShowCheckedModeBanner: false,
-      routerDelegate: di.get<AppRouter>().delegate(),
-      routeInformationParser: di.get<AppRouter>().defaultRouteParser(),
-      routeInformationProvider: di.get<AppRouter>().routeInfoProvider(),
+    return MultiBlocProvider(
+      providers: [
+        // BlocProvider<AuthCubit>(create: (context) => di.get()),
+        BlocProvider<AuthCubit>(
+            create: (context) => di.get()..getCurrentUser()),
+      ],
+      child: MaterialApp.router(
+        title: 'Mau Kos',
+        debugShowCheckedModeBanner: false,
+        routerDelegate: di.get<AppRouter>().delegate(),
+        routeInformationParser: di.get<AppRouter>().defaultRouteParser(),
+        routeInformationProvider: di.get<AppRouter>().routeInfoProvider(),
+      ),
     );
   }
 }

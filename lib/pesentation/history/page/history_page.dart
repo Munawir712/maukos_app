@@ -92,7 +92,7 @@ class _HistoryPageState extends State<HistoryPage> {
         itemCount: tabs.length,
         itemBuilder: (context, index) {
           if (!hasSewa && index == 0) {
-            return SizedBox();
+            return const SizedBox();
           } else {
             return Container(
               margin: EdgeInsets.only(

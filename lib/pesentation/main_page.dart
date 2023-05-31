@@ -3,6 +3,7 @@ import 'package:maukos_app/pesentation/history/page/history_page.dart';
 import 'package:maukos_app/pesentation/home/page/home_page.dart';
 import 'package:maukos_app/pesentation/profile/page/profile_page.dart';
 import 'package:maukos_app/pesentation/search/page/search_page.dart';
+import 'package:maukos_app/pesentation/mykos/page/mykos_page.dart';
 import 'package:unicons/unicons.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
@@ -19,6 +20,7 @@ class _MainPageState extends State<MainPage> {
   List<Widget> pages = const [
     HomePage(),
     SearchPage(),
+    MyKosPage(),
     HistoryPage(),
     ProfilePage(),
   ];
@@ -45,6 +47,8 @@ class _MainPageState extends State<MainPage> {
               icon: Icon(UniconsLine.home_alt), label: "Beranda"),
           BottomNavigationBarItem(
               icon: Icon(UniconsLine.search), label: "Cari"),
+          BottomNavigationBarItem(
+              icon: Icon(UniconsLine.home), label: "Kos Saya"),
           BottomNavigationBarItem(
               icon: Icon(UniconsLine.history_alt), label: "History"),
           BottomNavigationBarItem(

@@ -1,30 +1,48 @@
+import 'dart:developer';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maukos_app/app/data/models/auth/register_model.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
 import 'package:maukos_app/pesentation/auth/components/custom_textfield_widget.dart';
+import 'package:maukos_app/pesentation/auth/cubit/auth_cubit.dart';
 import 'package:maukos_app/routes/app_router.dart';
 
-class RegisterPage extends StatelessWidget {
-  RegisterPage({Key? key}) : super(key: key);
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({Key? key}) : super(key: key);
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passController = TextEditingController();
+  String? jenisKelamin;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.minWidth > 600) {
-          return Scaffold(
-              backgroundColor: primaryColor,
-              body: SingleChildScrollView(child: loginWeb()));
-        } else {
-          return Scaffold(body: SingleChildScrollView(child: loginMobile()));
-        }
+    return WillPopScope(
+      onWillPop: () async {
+        AutoRouter.of(context).replace(LoginRoute());
+        return false;
       },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.minWidth > 600) {
+            return Scaffold(
+                backgroundColor: primaryColor,
+                body: SingleChildScrollView(child: loginWeb()));
+          } else {
+            return Scaffold(body: SingleChildScrollView(child: loginMobile()));
+          }
+        },
+      ),
     );
   }
 
@@ -215,6 +233,40 @@ class RegisterPage extends StatelessWidget {
             const SizedBox(
               height: 10,
             ),
+            Text(
+              "Jenis Kelamin",
+              style:
+                  textStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                CustomSelectedRadio(
+                  label: 'Laki-laki',
+                  value: 'pria',
+                  groupValue: jenisKelamin,
+                  onChanged: (value) {
+                    setState(() {
+                      jenisKelamin = value!;
+                    });
+                  },
+                ),
+                CustomSelectedRadio(
+                  label: 'Perempuan',
+                  value: 'wanita',
+                  groupValue: jenisKelamin,
+                  onChanged: (value) {
+                    setState(() {
+                      jenisKelamin = value!;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 10,
+            ),
             CustomTextField(
               label: 'Password',
               hintText: 'Masukkan password anda',
@@ -224,18 +276,55 @@ class RegisterPage extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(top: 18, bottom: 12),
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  AutoRouter.of(context).replace(const MainRoute());
+              child: BlocConsumer<AuthCubit, AuthState>(
+                listener: (context, state) {
+                  if (state is AuthRegisterSuccess) {
+                    AutoRouter.of(context).replace(LoginRoute());
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Register Success")));
+                  }
+                  if (state is AuthError) {
+                    log("ADA Register ERROR BRO =>  ${state.message}");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Register Failed")));
+                  }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  padding: const EdgeInsets.all(16),
-                ),
-                child: Text(
-                  "Daftar",
-                  style: textStyle.copyWith(fontWeight: FontWeight.bold),
-                ),
+                builder: (context, state) {
+                  if (state is AuthLoading) {
+                    return ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.all(16),
+                      ),
+                      child: const Center(
+                          child:
+                              CircularProgressIndicator(color: Colors.white)),
+                    );
+                  }
+                  return ElevatedButton(
+                    onPressed: () {
+                      // AutoRouter.of(context).replace(const MainRoute());
+                      if (jenisKelamin != null) {
+                        context.read<AuthCubit>().register(RegisterModel(
+                              nameController.text,
+                              emailController.text,
+                              phoneController.text,
+                              passController.text,
+                              jenisKelamin!,
+                            ));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    child: Text(
+                      "Daftar",
+                      style: textStyle.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  );
+                },
               ),
             ),
             Row(
@@ -268,5 +357,55 @@ class RegisterPage extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class CustomSelectedRadio extends StatelessWidget {
+  final String value;
+  final String label;
+  final FocusNode? focusNode;
+  final String? groupValue;
+  final void Function(String?) onChanged;
+  const CustomSelectedRadio({
+    required this.label,
+    required this.value,
+    this.focusNode,
+    required this.groupValue,
+    required this.onChanged,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Theme(
+            data: Theme.of(context)
+                .copyWith(unselectedWidgetColor: Colors.black38),
+            child: Radio(
+                focusNode: focusNode,
+                value: value,
+                activeColor: primaryColor,
+                groupValue: groupValue,
+                onChanged: onChanged),
+          ),
+        ),
+        const SizedBox(
+          width: 6,
+        ),
+        InkWell(
+          onTap: () {
+            onChanged(value);
+          },
+          child: Text(
+            label,
+            style: textStyle.copyWith(),
+          ),
+        ),
+      ],
+    );
   }
 }
