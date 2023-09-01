@@ -35,7 +35,7 @@ class AuthCubit extends Cubit<AuthState> {
     response.fold(
       (l) => emit(AuthError(l)),
       (r) {
-        login(LoginModel(r.email, r.password));
+        login(LoginModel(r.username, r.password));
       },
     );
   }

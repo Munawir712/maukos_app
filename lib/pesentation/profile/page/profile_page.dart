@@ -1,3 +1,4 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maukos_app/core/constant/constants.dart';
@@ -6,6 +7,8 @@ import 'package:maukos_app/core/themes/textstyle.dart';
 import 'package:maukos_app/injection.dart';
 import 'package:maukos_app/pesentation/auth/cubit/auth_cubit.dart';
 import 'package:maukos_app/routes/app_router.dart';
+
+import '../../../core/widget/custom_flushbar_message.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -26,7 +29,7 @@ class ProfilePage extends StatelessWidget {
                 child: BlocBuilder<AuthCubit, AuthState>(
                   builder: (context, state) {
                     if (state is AuthLoading) {
-                      return CircularProgressIndicator();
+                      return const CircularProgressIndicator();
                     }
                     if (state is AuthLoaded) {
                       return Row(
@@ -61,7 +64,7 @@ class ProfilePage extends StatelessWidget {
                                     fontWeight: FontWeight.w700),
                               ),
                               Text(
-                                state.user.email,
+                                state.user.username,
                                 style: textStyle.copyWith(
                                     color: Colors.white54,
                                     fontSize: 12,
@@ -72,7 +75,7 @@ class ProfilePage extends StatelessWidget {
                         ],
                       );
                     }
-                    return SizedBox();
+                    return const SizedBox();
                   },
                 ),
               ),
@@ -131,72 +134,6 @@ class ProfilePage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Notification",
-                            style:
-                                textStyle.copyWith(fontWeight: FontWeight.w500),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                            color: Colors.black38,
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {},
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Security",
-                            style:
-                                textStyle.copyWith(fontWeight: FontWeight.w500),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                            color: Colors.black38,
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {},
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Help",
-                            style:
-                                textStyle.copyWith(fontWeight: FontWeight.w500),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                            color: Colors.black38,
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {},
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
                             "About",
                             style:
                                 textStyle.copyWith(fontWeight: FontWeight.w500),
@@ -232,12 +169,20 @@ class ProfilePage extends StatelessWidget {
                                   },
                                   style: ElevatedButton.styleFrom(
                                       backgroundColor: primaryColor),
-                                  child: Text("No"),
+                                  child: const Text("No"),
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
                                     context.read<AuthCubit>().logout();
-                                    di.get<AppRouter>().replace(LoginRoute());
+                                    di.get<AppRouter>().popUntilRoot();
+                                    di
+                                        .get<AppRouter>()
+                                        .replace(MainRoute(initialPage: 0));
+                                    CustomFlushBarMessage.message(
+                                      title: 'Sukses',
+                                      message: "Logout berhasil",
+                                      position: FlushbarPosition.TOP,
+                                    ).show(context);
                                   },
                                   style: ElevatedButton.styleFrom(
                                     shape: RoundedRectangleBorder(

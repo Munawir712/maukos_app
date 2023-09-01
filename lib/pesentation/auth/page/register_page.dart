@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,9 +8,13 @@ import 'package:maukos_app/app/data/models/auth/register_model.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
+import 'package:maukos_app/core/widget/button_widget.dart';
+import 'package:maukos_app/core/widget/custom_flushbar_message.dart';
+import 'package:maukos_app/injection.dart';
 import 'package:maukos_app/pesentation/auth/components/custom_textfield_widget.dart';
 import 'package:maukos_app/pesentation/auth/cubit/auth_cubit.dart';
 import 'package:maukos_app/routes/app_router.dart';
+import 'package:unicons/unicons.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -20,16 +25,17 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passController = TextEditingController();
-  String? jenisKelamin;
+  String? jenisKelamin = "pria";
+  bool obscureText = true;
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        AutoRouter.of(context).replace(LoginRoute());
+        AutoRouter.of(context).replace(const LoginRoute());
         return false;
       },
       child: LayoutBuilder(
@@ -39,7 +45,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 backgroundColor: primaryColor,
                 body: SingleChildScrollView(child: loginWeb()));
           } else {
-            return Scaffold(body: SingleChildScrollView(child: loginMobile()));
+            return Scaffold(
+                body: SingleChildScrollView(child: registerMobile()));
           }
         },
       ),
@@ -102,7 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 10,
                 ),
                 CustomTextField(
-                  controller: emailController,
+                  controller: usernameController,
                   label: 'Email',
                   hintText: 'Masukkan email anda',
                   keyboardType: TextInputType.emailAddress,
@@ -171,7 +178,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  Widget loginMobile() {
+  Widget registerMobile() {
     return Builder(builder: (context) {
       return Container(
         padding:
@@ -179,16 +186,21 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 100,
-              height: 100,
-              margin: const EdgeInsets.only(top: 50, bottom: 30),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(8),
+            Padding(
+              padding: const EdgeInsets.only(top: 50, bottom: 30),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    AutoRouter.of(context).pop();
+                  },
+                  color: whiteColor,
+                  icon: const Icon(UniconsLine.arrow_left),
+                ),
               ),
-              child: Image.asset("assets/images/logo.png"),
             ),
             Text(
               "Register",
@@ -216,9 +228,9 @@ class _RegisterPageState extends State<RegisterPage> {
               height: 10,
             ),
             CustomTextField(
-              controller: emailController,
-              label: 'Email',
-              hintText: 'Masukkan email anda',
+              controller: usernameController,
+              label: 'Username',
+              hintText: 'Masukkan username anda',
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(
@@ -271,7 +283,16 @@ class _RegisterPageState extends State<RegisterPage> {
               label: 'Password',
               hintText: 'Masukkan password anda',
               controller: passController,
-              obscureText: true,
+              obscureText: obscureText,
+              suffixIcon: IconButton(
+                onPressed: () {
+                  setState(() {
+                    obscureText = !obscureText;
+                  });
+                },
+                icon:
+                    Icon(obscureText ? UniconsLine.eye : UniconsLine.eye_slash),
+              ),
             ),
             Container(
               margin: const EdgeInsets.only(top: 18, bottom: 12),
@@ -279,50 +300,52 @@ class _RegisterPageState extends State<RegisterPage> {
               child: BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state is AuthRegisterSuccess) {
-                    AutoRouter.of(context).replace(LoginRoute());
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Register Success")));
+                    Future.delayed(const Duration(seconds: 2), () async {
+                      log("push lah");
+                      di.get<AppRouter>().replace(const LoginRoute());
+                    });
+                    CustomFlushBarMessage.message(
+                      title: 'Sukses',
+                      message: state.message,
+                      position: FlushbarPosition.TOP,
+                    ).show(context);
                   }
                   if (state is AuthError) {
                     log("ADA Register ERROR BRO =>  ${state.message}");
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Register Failed")));
+                    CustomFlushBarMessage.message(
+                      title: 'Mohon maaf',
+                      message: state.message,
+                      isFailed: true,
+                      position: FlushbarPosition.TOP,
+                    ).show(context);
                   }
                 },
                 builder: (context, state) {
                   if (state is AuthLoading) {
-                    return ElevatedButton(
+                    return ButtonWidget(
+                      width: double.infinity,
+                      height: 55,
                       onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.all(16),
-                      ),
                       child: const Center(
-                          child:
-                              CircularProgressIndicator(color: Colors.white)),
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
                     );
                   }
-                  return ElevatedButton(
+                  return ButtonWidget(
+                    width: double.infinity,
+                    height: 55,
+                    label: 'Daftar',
                     onPressed: () {
-                      // AutoRouter.of(context).replace(const MainRoute());
                       if (jenisKelamin != null) {
                         context.read<AuthCubit>().register(RegisterModel(
                               nameController.text,
-                              emailController.text,
+                              usernameController.text,
                               phoneController.text,
                               passController.text,
                               jenisKelamin!,
                             ));
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.all(16),
-                    ),
-                    child: Text(
-                      "Daftar",
-                      style: textStyle.copyWith(fontWeight: FontWeight.bold),
-                    ),
                   );
                 },
               ),
@@ -340,7 +363,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 InkWell(
                   onTap: () {
-                    AutoRouter.of(context).popUntilRoot();
+                    // AutoRouter.of(context).popUntilRoot();
+                    // AutoRouter.of(context).replace(const LoginRoute());
+                    di.get<AppRouter>().pop();
                   },
                   child: Text(
                     "Login",

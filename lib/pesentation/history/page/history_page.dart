@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:maukos_app/core/constant/constants.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maukos_app/app/data/models/history/history_penyewaan_response_model.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
+import 'package:maukos_app/core/widget/custom_flushbar_message.dart';
+import 'package:maukos_app/injection.dart';
+import 'package:maukos_app/pesentation/history/cubit/history_cubit.dart';
+
+import '../components/history_list_item.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({Key? key}) : super(key: key);
@@ -11,75 +17,160 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  List tabs = ['Berlangsung', 'Belum dikonfirmasi', 'Dikonfirmasi'];
+  List tabs = [
+    'Semua',
+    'Berlangsung',
+    'Belum dikonfirmasi',
+    'Selesai',
+    'Dibatalkan',
+  ];
   late int selectedIndex;
   bool hasSewa = true;
 
   @override
   void initState() {
     super.initState();
-    selectedIndex = hasSewa ? 0 : 1;
+    selectedIndex = 0;
+    di.get<HistoryCubit>().getAllHistory();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Riwayat Sewa',
-          style: textStyle.copyWith(
-            fontSize: 16,
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        backgroundColor: primaryColor,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(
-              height: 12,
+    return BlocConsumer<HistoryCubit, HistoryState>(
+      listener: (context, state) {
+        if (state is HistoryError) {
+          CustomFlushBarMessage.message(
+            title: 'Peringatan',
+            message: state.message,
+          ).show(context);
+        }
+        if (state is HistoryInitial) {
+          di.get<HistoryCubit>().getAllHistory();
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: Text(
+              'Riwayat Penyewaan',
+              style: textStyle.copyWith(
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            customTabBar(),
-            const Divider(),
-            Builder(builder: (context) {
-              if (selectedIndex == 0) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: HistoryListItem(
-                    img:
-                        "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80",
-                    name: "Kos Campuran",
+            backgroundColor: primaryColor,
+            elevation: 0,
+          ),
+          body: RefreshIndicator(
+            onRefresh: () async {
+              context.read<HistoryCubit>().getAllHistory();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 12,
                   ),
-                );
-              } else if (selectedIndex == 1) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: HistoryListItem(
-                    img:
-                        "https://images.unsplash.com/photo-1516156008625-3a9d6067fab5?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NjF8fGhvdXNlfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
-                    name: "Kos Purtri",
-                  ),
-                );
-              } else {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: HistoryListItem(
-                    img:
-                        "https://images.unsplash.com/photo-1516156008625-3a9d6067fab5?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NjF8fGhvdXNlfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
-                    name: "Kos Purtra",
-                  ),
-                );
-              }
-            }),
-            // HistoryListItem(),
-          ],
-        ),
-      ),
+                  customTabBar(),
+                  const Divider(),
+                  Builder(
+                    builder: (context) {
+                      if (state is HistoryLoading) {
+                        return const CircularProgressIndicator();
+                      } else if (state is HistoryError) {
+                        return Center(child: Text(state.message));
+                      } else if (state is HistoryLoaded) {
+                        final histories = getFilteredHistories(
+                            state.histories, selectedIndex);
+                        final jatuhTempoHistory = histories
+                            .where((e) => e.status == HistoryStatus.jatuhTempo)
+                            .toList();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (jatuhTempoHistory.isNotEmpty) ...[
+                              Container(
+                                color: Colors.red[100],
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.only(
+                                    left: 12, right: 12, bottom: 20, top: 10),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Ada Penyewaan Jatuh Tempo',
+                                      style: lBold.copyWith(
+                                        color: Colors.red[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      'Segera selesaikan, hubungin pemilik kos untuk konfirmasi pembayaran dll.',
+                                      style: mLight,
+                                    ),
+                                    const SizedBox(height: 5),
+                                    ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: jatuhTempoHistory.length,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemBuilder: (context, index) {
+                                        return HistoryListItem(
+                                          name: jatuhTempoHistory[index]
+                                              .kosan
+                                              .name,
+                                          history: jatuhTempoHistory[index],
+                                          border: Border.all(
+                                              color: Colors.red.shade600,
+                                              width: 2),
+                                        );
+                                      },
+                                    )
+                                  ],
+                                ),
+                              )
+                            ],
+                            ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: histories.length,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                final history = histories[index];
+                                // log(history.status.label);
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: 12,
+                                    left: 12,
+                                    right: 12,
+                                  ),
+                                  child: HistoryListItem(
+                                    history: history,
+                                    name: history.kosan.name,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      } else {
+                        // Handle other states if needed.
+                        return Container();
+                      }
+                    },
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -130,67 +221,31 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
   }
-}
 
-class HistoryListItem extends StatelessWidget {
-  final String img;
-  final String name;
-  const HistoryListItem({
-    Key? key,
-    required this.img,
-    required this.name,
-  }) : super(key: key);
+  List<HistoryPenyewaanResponseModel> getFilteredHistories(
+      List<HistoryPenyewaanResponseModel> histories, int selectedIndex) {
+    switch (selectedIndex) {
+      case 0:
+        return histories;
+      case 1:
+        return histories
+            .where((e) => e.status == HistoryStatus.sedangDisewa)
+            .toList();
+      case 2:
+        return histories
+            .where((e) => e.status == HistoryStatus.belumDikonfirmasi)
+            .toList();
+      case 3:
+        return histories
+            .where((e) => e.status == HistoryStatus.selesai)
+            .toList();
+      case 4:
+        return histories
+            .where((e) => e.status == HistoryStatus.dibatalkan)
+            .toList();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-                color: const Color(0xFFDEDEDE),
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                    image: NetworkImage(img), fit: BoxFit.cover)),
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width - (2 * 16) - 60 - 10 - 110,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: textStyle.copyWith(
-                      fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  "${numberFormat.format(1000000)} - per 2 bulan",
-                  style: textStyle.copyWith(
-                      fontSize: 13,
-                      color: Colors.black38,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 110,
-            alignment: Alignment.centerRight,
-            child: Text(
-              "${DateTime.now().day}-${DateTime.now().month}-${DateTime.now().year}",
-              style: textStyle.copyWith(
-                  fontSize: 12,
-                  color: Colors.black38,
-                  fontWeight: FontWeight.w500),
-            ),
-          )
-        ],
-      ),
-    );
+      default:
+        return [];
+    }
   }
 }

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
 
@@ -12,6 +10,7 @@ class CustomTextField extends StatelessWidget {
     this.controller,
     this.obscureText = false,
     this.keyboardType,
+    this.suffixIcon,
   });
 
   final String? label;
@@ -19,6 +18,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class CustomTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label ?? "Email",
+          label ?? "",
           style: textStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         Container(
@@ -41,9 +41,11 @@ class CustomTextField extends StatelessWidget {
             obscureText: obscureText,
             keyboardType: keyboardType,
             decoration: InputDecoration(
-                hintText: hintText ?? "Masuk email anda",
-                border: InputBorder.none,
-                hintStyle: textStyle.copyWith(color: Colors.black38)),
+              hintText: hintText ?? "",
+              border: InputBorder.none,
+              hintStyle: textStyle.copyWith(color: Colors.black38),
+              suffixIcon: suffixIcon,
+            ),
           ),
         ),
       ],

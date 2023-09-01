@@ -3,6 +3,8 @@ import 'package:maukos_app/app/domain/entities/kos/kos_entity.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:maukos_app/core/widget/custom_box_image.dart';
 
 class CardKos extends StatelessWidget {
   final KosEntity kosEntity;
@@ -18,6 +20,8 @@ class CardKos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String baseUrl = dotenv.get('URL');
+    // log("$baseUrl/${kosEntity.imagesPaths[0]}");
     return Container(
       width: width,
       height: height,
@@ -34,20 +38,26 @@ class CardKos extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
+            // child: CustomBoxImage(),
             child: Container(
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDEDEDE),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(8)),
-                image: DecorationImage(
-                  image: NetworkImage(kosEntity.imagesPaths[0]),
-                  fit: BoxFit.cover,
-                ),
+              decoration: const BoxDecoration(
+                color: Color(0xFFDEDEDE),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
               ),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
+                  if (kosEntity.imagesPaths.isNotEmpty)
+                    CustomBoxImage(
+                      imageUrl: "$baseUrl/${kosEntity.imagesPaths[0]}",
+                      isNetwork: true,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(8)),
+                    ),
                   Positioned(
                     left: 10,
                     bottom: -12,
@@ -70,22 +80,23 @@ class CardKos extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                      right: 5,
-                      top: 5,
-                      child: StatefulBuilder(builder: (context, setState) {
-                        return IconButton(
-                            onPressed: () {
-                              // setState(
-                              //   () {
-                              //     kosEntity.isBookmark = !kosEntity.isBookmark;
-                              //   },
-                              // );
-                            },
-                            icon: Icon(
-                              false ? Icons.bookmark : Icons.bookmark_outline,
-                              color: Colors.white,
-                            ));
-                      })),
+                    right: 5,
+                    top: 5,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black12.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        isSelected: true,
+                        onPressed: () {},
+                        icon: const Icon(
+                          false ? Icons.bookmark : Icons.bookmark_outline,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

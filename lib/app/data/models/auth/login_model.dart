@@ -1,21 +1,22 @@
 import 'dart:convert';
 
 class LoginModel {
-  final String email;
+  // final String email;
+  final String username;
   final String password;
 
-  LoginModel(this.email, this.password);
+  LoginModel(this.username, this.password);
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      'email': email,
+      'username': username,
       'password': password,
     };
   }
 
   factory LoginModel.fromMap(Map<String, dynamic> map) {
     return LoginModel(
-      map['email'] as String,
+      map['username'] as String,
       map['password'] as String,
     );
   }

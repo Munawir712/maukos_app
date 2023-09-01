@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:maukos_app/app/domain/entities/kos/kos_entity.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
-import 'package:maukos_app/pesentation/home/components/card_kos.dart';
+import 'package:maukos_app/injection.dart';
+import 'package:maukos_app/pesentation/home/components/kos/card_kos.dart';
+import 'package:maukos_app/pesentation/search/cubit/search_kos_cubit.dart';
+import 'package:maukos_app/routes/app_router.dart';
 
 class SearchPage extends StatelessWidget {
-  const SearchPage({Key? key}) : super(key: key);
+  SearchPage({Key? key}) : super(key: key);
+
+  final searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    di.get<SearchKosCubit>().searchKos('');
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,21 +28,17 @@ class SearchPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Search",
+                  "Cari Kos",
                   style: textStyle.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
                 ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.filter_list_alt),
-                )
               ],
             ),
           ),
           const SizedBox(
-            height: 20,
+            height: 10,
           ),
           Container(
             height: 45,
@@ -49,16 +51,23 @@ class SearchPage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Search",
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: "Cari",
                       border: InputBorder.none,
                     ),
+                    onChanged: (text) {
+                      di.get<SearchKosCubit>().searchKos(text);
+                    },
                   ),
                 ),
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    searchController.clear();
+                    di.get<SearchKosCubit>().searchKos(searchController.text);
+                  },
                   icon: Icon(
                     Icons.cancel_sharp,
                     color: Colors.grey.shade700,
@@ -70,18 +79,47 @@ class SearchPage extends StatelessWidget {
           const SizedBox(
             height: 20,
           ),
-          ListView.separated(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: defaultMargin),
-            shrinkWrap: true,
-            itemCount: listKos.length,
-            separatorBuilder: (context, index) => const SizedBox(
-              height: 16,
-            ),
-            itemBuilder: (context, index) {
-              return CardKos(
-                kosEntity: listKos[index],
-                height: 245,
+          BlocBuilder<SearchKosCubit, SearchKosState>(
+            builder: (context, state) {
+              if (state is SearchKosLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (state is SearchKosLoaded) {
+                final listKos = state.kosEntity;
+                if (listKos.isEmpty) {
+                  return const Center(
+                    child: Text("Data kos ditemukan"),
+                  );
+                }
+                return ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: defaultMargin),
+                  shrinkWrap: true,
+                  itemCount: listKos.length,
+                  separatorBuilder: (context, index) => const SizedBox(
+                    height: 16,
+                  ),
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        di
+                            .get<AppRouter>()
+                            .push(KosDetailRoute(kosEntity: listKos[index]));
+                      },
+                      child: CardKos(
+                        kosEntity: listKos[index],
+                        height: 245,
+                      ),
+                    );
+                  },
+                );
+              }
+              return const Center(
+                child: Text("Data tidak ditemukan"),
               );
             },
           ),

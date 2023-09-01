@@ -20,6 +20,7 @@ dependencies:
   flutter_local_notifications: ^13.0.0
   flutter_native_splash: ^2.2.19
   flutter_secure_storage: ^8.0.0
+  # flutter_html: ^2.1.0
 
   # other
   get_it: ^7.2.0
@@ -33,6 +34,9 @@ dependencies:
   dio: ^4.0.6
   equatable: ^2.0.5
   http: ^0.13.6
+  calendar_date_picker2: ^0.5.2
+  url_launcher: ^6.1.11
+  geocoding: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -63,4 +67,5 @@ flutter:
     - assets/
     - assets/images/
     - assets/icon/
+    - .env.dev
   #   - images/a_dot_ham.jpeg

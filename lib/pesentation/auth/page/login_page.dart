@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,17 +8,26 @@ import 'package:maukos_app/app/data/models/auth/login_model.dart';
 import 'package:maukos_app/core/constant/constants.dart';
 import 'package:maukos_app/core/themes/color.dart';
 import 'package:maukos_app/core/themes/textstyle.dart';
+import 'package:maukos_app/core/widget/button_widget.dart';
+import 'package:maukos_app/core/widget/custom_flushbar_message.dart';
+import 'package:maukos_app/injection.dart';
 import 'package:maukos_app/pesentation/auth/components/custom_textfield_widget.dart';
 import 'package:maukos_app/pesentation/auth/cubit/auth_cubit.dart';
 import 'package:maukos_app/routes/app_router.dart';
+import 'package:unicons/unicons.dart';
 
-class LoginPage extends StatelessWidget {
-  LoginPage({Key? key}) : super(key: key);
-  final TextEditingController emailController =
-      TextEditingController(text: 'admin@gmail.com');
+class LoginPage extends StatefulWidget {
+  const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController passController =
-      TextEditingController(text: 'password');
+  final TextEditingController passController = TextEditingController();
+  bool obscureText = true;
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +184,22 @@ class LoginPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 50),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    AutoRouter.of(context).pop();
+                  },
+                  color: whiteColor,
+                  icon: const Icon(UniconsLine.arrow_left),
+                ),
+              ),
+            ),
             Container(
               width: 100,
               height: 100,
@@ -202,68 +228,85 @@ class LoginPage extends StatelessWidget {
               height: 20,
             ),
             CustomTextField(
-              controller: emailController,
-              label: 'Email',
-              hintText: 'Masukkan email anda',
+              controller: usernameController,
+              label: 'Username',
+              hintText: 'Masukkan username anda',
               keyboardType: TextInputType.emailAddress,
             ),
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 18),
             CustomTextField(
               label: 'Password',
               hintText: 'Masukkan password anda',
               controller: passController,
-              obscureText: true,
+              obscureText: obscureText,
+              suffixIcon: IconButton(
+                onPressed: () {
+                  setState(() {
+                    obscureText = !obscureText;
+                  });
+                },
+                icon:
+                    Icon(obscureText ? UniconsLine.eye : UniconsLine.eye_slash),
+              ),
             ),
+            const SizedBox(height: 18),
             BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
                 if (state is AuthLoaded) {
-                  AutoRouter.of(context).replace(const MainRoute());
+                  final user = state.user;
+
+                  if (user.roles == 'ADMIN') {
+                    di.get<AppRouter>().replaceNamed('/admin');
+                  } else {
+                    di.get<AppRouter>().pop();
+                    // CustomFlushBarMessage.message(
+                    //   title: 'Sukses',
+                    //   message: "Login berhasil",
+                    //   position: FlushbarPosition.TOP,
+                    // ).show(context);
+                  }
                 }
                 if (state is AuthError) {
                   log("ADA ERROR BRO =>  ${state.message}");
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text("Login Failed")));
+                  CustomFlushBarMessage.message(
+                    title: 'Mohon maaf',
+                    message: state.message,
+                    isFailed: true,
+                    position: FlushbarPosition.TOP,
+                  ).show(context);
+                }
+                if (state is AuthRegisterSuccess) {
+                  log("Regist Berhasil");
+                  CustomFlushBarMessage.message(
+                    title: 'Sukses',
+                    message: state.message,
+                    position: FlushbarPosition.TOP,
+                  ).show(context);
                 }
               },
               builder: (context, state) {
                 if (state is AuthLoading) {
-                  return Container(
-                    margin: const EdgeInsets.only(top: 18, bottom: 12),
+                  return ButtonWidget(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.all(16),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
+                    height: 55,
+                    onPressed: () {},
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
                     ),
                   );
                 }
-                return Container(
-                  margin: const EdgeInsets.only(top: 18, bottom: 12),
+                return ButtonWidget(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.read<AuthCubit>().login(LoginModel(
-                          emailController.text, passController.text));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.all(16),
-                    ),
-                    child: Text(
-                      "Login",
-                      style: textStyle.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  height: 55,
+                  label: 'Login',
+                  onPressed: () {
+                    context.read<AuthCubit>().login(LoginModel(
+                        usernameController.text, passController.text));
+                  },
                 );
               },
             ),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -277,7 +320,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: () {
-                    AutoRouter.of(context).replace(RegisterRoute());
+                    AutoRouter.of(context).replace(const RegisterRoute());
                   },
                   child: Text(
                     "Daftar",

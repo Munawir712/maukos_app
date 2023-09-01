@@ -2,14 +2,19 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:maukos_app/app/domain/entities/auth/user_entity.dart';
 
+import '../../app/data/models/auth/penyewa_model.dart';
+
 class LocalStorage {
   static Future<void> storeCredentialToLocal(
       UserEntity user, String password) async {
     try {
       const storage = FlutterSecureStorage();
       await storage.write(key: 'email', value: user.email);
+      await storage.write(key: 'username', value: user.username);
       await storage.write(key: 'token', value: user.token);
       await storage.write(key: 'password', value: password);
+      await storage.write(key: 'roles', value: user.roles);
+      await storage.write(key: 'penyewa', value: user.penyewa.toRawJson());
     } catch (e) {
       rethrow;
     }
@@ -33,8 +38,10 @@ class LocalStorage {
         UserEntity dataLogin = UserEntity(
           email: values['email'].toString(),
           password: values['password'].toString(),
+          username: values['username'].toString(),
           token: values['token'].toString(),
-          roles: '',
+          roles: values['roles'].toString(),
+          penyewa: PenyewaModel.fromRawJson(values['penyewa']!),
         );
 
         return Right(dataLogin);
